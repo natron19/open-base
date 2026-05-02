@@ -1,0 +1,13 @@
+<div class="text-center py-5">
+  <h1 class="display-5 fw-bold"><%= ENV.fetch("APP_NAME", "Open Demo Starter") %></h1>
+  <p class="lead text-muted"><%= ENV.fetch("APP_TAGLINE", "A minimal Rails 8 + AI boilerplate") %></p>
+  <p class="text-muted"><%= ENV.fetch("APP_DESCRIPTION", "Clone, run, and extend in under 30 minutes.") %></p>
+  <div class="mt-4 d-flex justify-content-center gap-3">
+    <% if signed_in? %>
+      <%= link_to "Go to dashboard", dashboard_path, class: "btn btn-primary btn-lg" %>
+    <% else %>
+      <%= link_to "Sign up free", sign_up_path, class: "btn btn-primary btn-lg" %>
+      <%= link_to "Sign in", sign_in_path, class: "btn btn-outline-secondary btn-lg" %>
+    <% end %>
+  </div>
+</div>
