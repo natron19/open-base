@@ -11,7 +11,7 @@ module Admin
     def update
       @template = AiTemplate.find(params[:id])
       if @template.update(template_params)
-        redirect_to edit_admin_ai_template_path(@template), notice: "Template saved."
+        redirect_to admin_edit_ai_template_path(@template), notice: "Template saved."
       else
         render :edit, status: :unprocessable_entity
       end

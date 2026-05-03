@@ -24,6 +24,7 @@
 !/tmp/pids/.keep
 
 /public/assets
+.DS_Store
 
 # Ignore key files for decrypting credentials and more.
 /config/*.key

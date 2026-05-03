@@ -25,7 +25,7 @@
             <td class="small text-muted"><%= template.description %></td>
             <td class="small text-muted"><%= template.updated_at.strftime("%b %d, %Y") %></td>
             <td>
-              <%= link_to "Edit", edit_admin_ai_template_path(template), class: "btn btn-sm btn-outline-primary" %>
+              <%= link_to "Edit", admin_edit_ai_template_path(template), class: "btn btn-sm btn-outline-primary" %>
             </td>
           </tr>
         <% end %>
