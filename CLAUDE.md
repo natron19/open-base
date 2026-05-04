@@ -10,7 +10,8 @@ Always consult the relevant guide before implementing — they contain proven pa
 |---|---|
 | [`docs/turbo-stimulus-patterns.md`](docs/turbo-stimulus-patterns.md) | Any Turbo Stream, Stimulus controller, Bootstrap interaction, or Editor.js work |
 | [`docs/security.md`](docs/security.md) | CSP, headers, rate limiting, secrets, auth security patterns |
-| [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | GeminiService, AiGatekeeper, AiBudgetChecker, new AI templates |
+| [`docs/ai-templates.md`](docs/ai-templates.md) | Building AI features: creating templates, calling GeminiService, error handling, testing |
+| [`docs/ai-guardrails.md`](docs/ai-guardrails.md) | Safety layer: AiGatekeeper, AiBudgetChecker, LlmRequest logging, deliberate omissions |
 | [`docs/testing.md`](docs/testing.md) | RSpec factories, model specs, service specs, request specs, Gemini stubs |
 
 ---
@@ -203,21 +204,24 @@ Always return 404 for non-admin access. Never return 403, which would reveal the
 ```ruby
 # In a controller action
 result = GeminiService.generate(
-  template: "template_name_v1",
+  template:  "template_name_v1",
   variables: { topic: params[:topic], audience: params[:audience] }
 )
-
-rescue GeminiService::GeminiError => e
-  @error_type = case e
-    when GeminiService::BudgetExceededError then :budget_exceeded
-    when GeminiService::GatekeeperError     then :gatekeeper_blocked
-    when GeminiService::TimeoutError        then :timeout
-    else :error
-  end
-  render partial: "shared/ai_error", locals: { error_type: @error_type }
+rescue GeminiService::BudgetExceededError
+  render partial: "shared/ai_error", locals: { error_type: :budget_exceeded }
+rescue GeminiService::GatekeeperError
+  render partial: "shared/ai_error", locals: { error_type: :gatekeeper_blocked }
+rescue GeminiService::TimeoutError
+  render partial: "shared/ai_error", locals: { error_type: :timeout }
+rescue GeminiService::GeminiError
+  render partial: "shared/ai_error", locals: { error_type: :error }
 ```
 
 **Never call the Gemini API directly.** Always go through `GeminiService.generate`. This ensures every call is gated, budgeted, logged, and time-bounded.
+
+**System prompts** are prepended to the user message automatically by `GeminiService` — the v1beta REST API does not support a separate `system_instruction` field. Write the system prompt as if it will be the first paragraph the model reads before your user content.
+
+**Working models** (confirmed with Google AI Studio free-tier API keys): `gemini-2.5-flash` (default), `gemini-2.5-pro`. Do not use `gemini-2.0-flash` or any `1.5-*` model — they return 404 on v1beta for new API keys.
 
 ### AiTemplate Variable Interpolation
 

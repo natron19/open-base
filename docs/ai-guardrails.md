@@ -2,6 +2,8 @@
 
 This guide defines the AI safety and abuse-prevention architecture for the Open Demo Starter and all demo apps built on it. It documents what is implemented, why, and what was deliberately left out.
 
+For building AI features (creating templates, calling GeminiService, error handling, testing), see [`ai-templates.md`](ai-templates.md).
+
 The two frameworks referenced throughout:
 - **PROTECTS** — prompt-level guardrails that run before or during the AI call
 - **WATCHDOG** — backend measures for logging, rate limiting, and anomaly detection
@@ -166,7 +168,7 @@ Each template's guardrail settings live in the database, editable in the admin U
 |---|---|---|
 | `max_output_tokens` | Hard token cap on the API call | 2000 |
 | `temperature` | Randomness (0.0 = deterministic, 2.0 = chaotic) | 0.7 |
-| `system_prompt` | Sets the AI's role and behavior | "You are a professional writing assistant..." |
+| `system_prompt` | Sets the AI's role and behavior. Prepended to the user message — not sent as a separate API field. | "You are a professional writing assistant..." |
 
 **Before shipping any new template:**
 - [ ] `system_prompt` defines a clear, scoped role
@@ -244,8 +246,9 @@ The `health_ping` AiTemplate must be seeded for this to work:
 
 ```ruby
 AiTemplate.find_or_create_by!(name: "health_ping") do |t|
-  t.system_prompt        = "Respond with exactly: ok"
+  t.system_prompt        = "You are a health check endpoint. Respond with exactly: ok"
   t.user_prompt_template = "ping"
+  t.model                = "gemini-2.5-flash"
   t.max_output_tokens    = 10
   t.temperature          = 0.0
 end

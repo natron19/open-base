@@ -1,4 +1,5 @@
-require "gemini-ai"
+require "faraday"
+require "json"
 
 class GeminiService
   class GeminiError         < StandardError; end
@@ -7,6 +8,7 @@ class GeminiService
   class TimeoutError        < GeminiError;   end
 
   TIMEOUT_SECONDS = ENV.fetch("AI_GLOBAL_TIMEOUT_SECONDS", "15").to_i
+  BASE_URL        = "https://generativelanguage.googleapis.com/v1beta"
 
   def self.generate(template:, variables: {}, user: Current.user)
     new(template:, variables:, user:).generate
@@ -79,10 +81,11 @@ class GeminiService
       raise
 
     rescue => e
+      api_body = e.respond_to?(:response) && e.response ? e.response[:body].to_s : ""
       log.update!(
         status:        "error",
         duration_ms:   elapsed_ms(start_time),
-        error_message: e.message.truncate(500)
+        error_message: (api_body.presence || e.message).truncate(500)
       )
       raise GeminiError, "An error occurred while generating a response."
     end
@@ -91,28 +94,38 @@ class GeminiService
   private
 
   def call_gemini(ai_template, rendered_prompt)
-    client = Gemini.new(
-      credentials: {
-        service: "generative-language-api",
-        api_key:  ENV.fetch("GEMINI_API_KEY")
-      },
-      options: { model: ai_template.model, server_sent_events: false }
-    )
+    full_prompt = [ai_template.system_prompt.presence, rendered_prompt].compact.join("\n\n")
 
-    result = Timeout.timeout(TIMEOUT_SECONDS) do
-      client.generate_content({
-        contents: { role: "user", parts: { text: rendered_prompt } },
-        system_instruction: { role: "user", parts: { text: ai_template.system_prompt } },
-        generationConfig: {
-          maxOutputTokens: ai_template.max_output_tokens,
-          temperature:     ai_template.temperature.to_f
-        }
-      })
+    http = Faraday.new do |conn|
+      conn.request  :json
+      conn.response :json
+      conn.adapter  Faraday.default_adapter
     end
 
-    text = result.dig("candidates", 0, "content", "parts", 0, "text") || ""
-    prompt_tokens   = result.dig("usageMetadata", "promptTokenCount")   || estimate_tokens(rendered_prompt)
-    response_tokens = result.dig("usageMetadata", "candidatesTokenCount") || estimate_tokens(text)
+    response = Timeout.timeout(TIMEOUT_SECONDS) do
+      http.post("#{BASE_URL}/models/#{ai_template.model}:generateContent") do |req|
+        req.params["key"] = ENV.fetch("GEMINI_API_KEY")
+        req.body = {
+          contents: [{ parts: [{ text: full_prompt }] }],
+          generationConfig: {
+            maxOutputTokens: ai_template.max_output_tokens,
+            temperature:     ai_template.temperature.to_f
+          }
+        }
+      end
+    end
+
+    unless response.success?
+      raise StandardError, response.body.to_json
+    end
+
+    body    = response.body
+    text    = (body.dig("candidates", 0, "content", "parts") || [])
+                .map { |p| p["text"].to_s }
+                .join
+
+    prompt_tokens   = body.dig("usageMetadata", "promptTokenCount")     || estimate_tokens(full_prompt)
+    response_tokens = body.dig("usageMetadata", "candidatesTokenCount") || estimate_tokens(text)
 
     [text, prompt_tokens, response_tokens]
   end
@@ -122,7 +135,6 @@ class GeminiService
   end
 
   def estimate_cost(prompt_tokens, response_tokens, model)
-    # gemini-2.0-flash approximate pricing in cents per 1M tokens
     input_rate  = 7.5
     output_rate = 30.0
     ((prompt_tokens * input_rate) + (response_tokens * output_rate)) / 1_000_000.0

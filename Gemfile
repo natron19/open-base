@@ -19,7 +19,7 @@ gem "stimulus-rails"
 gem "bcrypt", "~> 3.1.7"
 
 # AI
-gem "gemini-ai"
+gem "faraday"
 
 # Env vars
 gem "dotenv-rails", groups: [:development, :test]
