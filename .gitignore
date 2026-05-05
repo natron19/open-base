@@ -12,6 +12,8 @@
 /.env.*
 !/.env.example
 
+/config/credentials.yml.enc  
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
