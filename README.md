@@ -30,7 +30,7 @@
 | Auth | Rails native (`has_secure_password`, sessions) |
 | CSS | Bootstrap 5 dark mode (CDN) |
 | JavaScript | Stimulus + Turbo via importmap |
-| AI | Google Gemini via `gemini-ai` gem |
+| AI | Google Gemini (direct Faraday/REST calls) |
 | Queue / Cache / Cable | Solid Stack (no Redis) |
 | Testing | RSpec |
 
@@ -56,7 +56,7 @@ See `app/services/ai_gatekeeper.rb` and `app/services/ai_budget_checker.rb` to e
 
 ## Cost
 
-All default templates use `gemini-2.0-flash`, which has a generous free tier. A user
+All default templates use `gemini-2.5-flash`, which has a generous free tier. A user
 running the demo locally will not incur charges under typical use.
 
 ## Customization
