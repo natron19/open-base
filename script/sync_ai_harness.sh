@@ -15,6 +15,7 @@ if [[ "${1:-}" == "--dry-run" ]]; then DRY_RUN=true; shift; fi
 
 NEW_FILES=(
   app/services/ai_output_guard.rb
+  app/services/secret_redactor.rb
   app/services/ai_guard_config.rb
   app/views/shared/ai_error_page.html.erb
   lib/evals/adapters/result.rb
@@ -32,6 +33,8 @@ NEW_FILES=(
   evals/guardrails.yml
   evals/judge_calibration.yml
   spec/services/ai_output_guard_spec.rb
+  spec/services/secret_redactor_spec.rb
+  spec/services/gemini_key_transport_spec.rb
   spec/lib/evals/checks_spec.rb
   spec/lib/evals/judge_spec.rb
 )

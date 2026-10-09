@@ -75,4 +75,12 @@ RSpec.describe LlmRequest, type: :model do
       end
     end
   end
+
+  describe "credential redaction" do
+    it "masks the Gemini key in a stored error message" do
+      key = "AIzaSyTESTONLY_0123456789abcdefghijklmno"
+      req = create(:llm_request, status: "error", error_message: "403 for https://x.test/v1?key=#{key}")
+      expect(req.reload.error_message).to eq("403 for https://x.test/v1?key=[REDACTED]")
+    end
+  end
 end
