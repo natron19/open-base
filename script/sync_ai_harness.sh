@@ -35,8 +35,10 @@ NEW_FILES=(
   spec/services/ai_output_guard_spec.rb
   spec/services/secret_redactor_spec.rb
   spec/services/gemini_key_transport_spec.rb
+  spec/services/gemini_cost_spec.rb
   spec/lib/evals/checks_spec.rb
   spec/lib/evals/judge_spec.rb
+  spec/lib/evals/runner_rubric_spec.rb
 )
 
 MODIFIED_FILES=(
